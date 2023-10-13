@@ -1,0 +1,10 @@
+name: CarbonChatBubbles
+version: '${version}'
+main: net.draycia.carbonchatbubbles.CarbonChatBubbles
+api-version: "1.20"
+dependencies:
+  server:
+    CarbonChat:
+      load: AFTER
+      required: true
+      join-classpath: true

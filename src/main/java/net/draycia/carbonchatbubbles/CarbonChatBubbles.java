@@ -26,6 +26,8 @@ public final class CarbonChatBubbles extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        
         CarbonChatProvider.carbonChat().eventHandler().subscribe(CarbonChatEvent.class, 1000, false, event -> {
             String content = PlainTextComponentSerializer.plainText().serialize(event.message());
 

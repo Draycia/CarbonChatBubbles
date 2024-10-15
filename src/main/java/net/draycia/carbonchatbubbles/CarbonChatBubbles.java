@@ -42,6 +42,13 @@ public final class CarbonChatBubbles extends JavaPlugin {
                     return;
                 }
 
+                if (displayCache.containsKey(player.getUniqueId())) {
+                    TextDisplay oldDisplay = (TextDisplay) Bukkit.getEntity(displayCache.get(player.getUniqueId()));
+                    if (oldDisplay != null) {
+                        oldDisplay.remove();
+                    }
+                }
+
                 final TextDisplay display = (TextDisplay) player.getWorld().spawnEntity(player.getEyeLocation().add(0, 1, 0), EntityType.TEXT_DISPLAY);
 
                 display.setDefaultBackground(false);

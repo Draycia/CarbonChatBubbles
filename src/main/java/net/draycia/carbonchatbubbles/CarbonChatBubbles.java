@@ -37,7 +37,10 @@ public final class CarbonChatBubbles extends JavaPlugin {
             final String wrappedContent = WordUtils.wrap(content, this.getConfig().getInt("word-wrap-length"), "\n", false);
 
             Bukkit.getScheduler().runTask(this, () -> {
-                final Player player = Objects.requireNonNull(Bukkit.getPlayer(event.sender().uuid()));
+                final Player player = Bukkit.getPlayer(event.sender().uuid());
+                if (player == null) {
+                    return;
+                }
 
                 final TextDisplay display = (TextDisplay) player.getWorld().spawnEntity(player.getEyeLocation().add(0, 1, 0), EntityType.TEXT_DISPLAY);
 

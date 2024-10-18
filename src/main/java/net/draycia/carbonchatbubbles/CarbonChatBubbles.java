@@ -6,10 +6,12 @@ import java.util.UUID;
 import net.draycia.carbon.api.CarbonChatProvider;
 import net.draycia.carbon.api.event.events.CarbonChatEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.commons.lang3.text.WordUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -35,16 +37,40 @@ public final class CarbonChatBubbles extends JavaPlugin {
             final String wrappedContent = WordUtils.wrap(content, this.getConfig().getInt("word-wrap-length"), "\n", false);
 
             Bukkit.getScheduler().runTask(this, () -> {
-                final Player player = Objects.requireNonNull(Bukkit.getPlayer(event.sender().uuid()));
+                final Player player = Bukkit.getPlayer(event.sender().uuid());
+                if (player == null) {
+                    return;
+                }
+
+                if (displayCache.containsKey(player.getUniqueId())) {
+                    TextDisplay oldDisplay = (TextDisplay) Bukkit.getEntity(displayCache.get(player.getUniqueId()));
+                    if (oldDisplay != null) {
+                        oldDisplay.remove();
+                    }
+                }
 
                 final TextDisplay display = (TextDisplay) player.getWorld().spawnEntity(player.getEyeLocation().add(0, 1, 0), EntityType.TEXT_DISPLAY);
 
                 display.setDefaultBackground(false);
-                display.setBackgroundColor(this.getConfig().getColor("background-color"));
+
+                String backgroundColorName = this.getConfig().getString("background-color").toLowerCase();
+                TextColor backgroundColor = NamedTextColor.NAMES.value(backgroundColorName) != null
+                        ? NamedTextColor.NAMES.value(backgroundColorName)
+                        : TextColor.fromHexString(backgroundColorName);
+
+                display.setBackgroundColor(backgroundColor != null ? Color.fromRGB(backgroundColor.value()) : Color.WHITE);
+
                 display.setShadowed(false);
-                display.setSeeThrough(true);
+                display.setSeeThrough(false);
                 display.setBillboard(Display.Billboard.CENTER);
-                display.text(Component.text(wrappedContent, TextColor.color(this.getConfig().getColor("text-color").asRGB())));
+
+                String textColorName = this.getConfig().getString("text-color").toLowerCase();
+                TextColor textColor = NamedTextColor.NAMES.value(textColorName) != null
+                        ? NamedTextColor.NAMES.value(textColorName)
+                        : TextColor.fromHexString(textColorName);
+
+                display.text(Component.text(wrappedContent, textColor != null ? textColor : NamedTextColor.BLACK));
+
                 display.getTransformation().getTranslation().add(0f, 0.5f, 0f);
                 display.setInterpolationDuration(0);
                 display.setInterpolationDelay(0);

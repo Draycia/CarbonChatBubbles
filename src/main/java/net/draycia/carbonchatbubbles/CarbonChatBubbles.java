@@ -4,12 +4,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.UUID;
 import net.draycia.carbon.api.CarbonChatProvider;
+import net.draycia.carbon.api.channels.ChatChannel;
 import net.draycia.carbon.api.event.events.CarbonChatEvent;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.apache.commons.lang3.text.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.entity.Display;
@@ -35,10 +33,9 @@ public final class CarbonChatBubbles extends JavaPlugin {
                 return;
             }
 
-            String content = PlainTextComponentSerializer.plainText().serialize(event.message());
-
+            //String content = PlainTextComponentSerializer.plainText().serialize(event.message());
             // Not sure if necessary, I just fixed this but content was still being wrapped?
-            final String wrappedContent = WordUtils.wrap(content, this.getConfig().getInt("word-wrap-length"), "\n", false);
+            //final String wrappedContent = WordUtils.wrap(content, this.getConfig().getInt("word-wrap-length"), "\n", false);
 
             Bukkit.getScheduler().runTask(this, () -> {
                 final Player player = Bukkit.getPlayer(event.sender().uuid());
@@ -57,17 +54,17 @@ public final class CarbonChatBubbles extends JavaPlugin {
 
                 display.setDefaultBackground(false);
 
-                String backgroundColorName = this.getConfig().getString("background-color").toLowerCase();
+                String backgroundColorName = this.getString(event.chatChannel(), "background-color", "white").toLowerCase();
                 TextColor backgroundColor = NamedTextColor.NAMES.value(backgroundColorName) != null
                         ? NamedTextColor.NAMES.value(backgroundColorName)
                         : TextColor.fromHexString(backgroundColorName);
 
                 display.setBackgroundColor(backgroundColor != null ? Color.fromRGB(backgroundColor.value()) : Color.WHITE);
 
-                display.setShadowed(this.getConfig().getBoolean("shadowed", false));
-                display.setSeeThrough(this.getConfig().getBoolean("see-through", false));
+                display.setShadowed(this.getBoolean(event.chatChannel(), "shadowed", false));
+                display.setSeeThrough(this.getBoolean(event.chatChannel(), "see-through", false));
 
-                String billboard = this.getConfig().getString("billboard-style", "CENTER");
+                String billboard = this.getString(event.chatChannel(), "billboard-style", "CENTER");
                 try {
                     display.setBillboard(Display.Billboard.valueOf(billboard));
                 } catch (IllegalArgumentException ignored) {
@@ -75,17 +72,17 @@ public final class CarbonChatBubbles extends JavaPlugin {
                     display.setBillboard(Display.Billboard.CENTER);
                 }
 
-                String textColorName = this.getConfig().getString("text-color", "BLACK").toLowerCase();
+                String textColorName = this.getString(event.chatChannel(), "text-color", "BLACK").toLowerCase();
                 TextColor textColor = NamedTextColor.NAMES.value(textColorName) != null
                         ? NamedTextColor.NAMES.value(textColorName)
                         : TextColor.fromHexString(textColorName);
 
-                display.text(Component.text(wrappedContent, textColor != null ? textColor : NamedTextColor.BLACK));
+                display.text(event.message().colorIfAbsent(textColor != null ? textColor : NamedTextColor.BLACK));
 
                 display.getTransformation().getTranslation().add(
-                        (float) this.getConfig().getDouble("offsets.x", 0.0f),
-                        (float) this.getConfig().getDouble("offsets.y", 0.5f),
-                        (float) this.getConfig().getDouble("offsets.z", 0.0f)
+                        this.getFloat(event.chatChannel(), "offsets.x", 0.0f),
+                        this.getFloat(event.chatChannel(), "offsets.y", 0.5f),
+                        this.getFloat(event.chatChannel(), "offsets.z", 0.0f)
                 );
                 display.setInterpolationDuration(0);
                 display.setInterpolationDelay(0);
@@ -94,12 +91,12 @@ public final class CarbonChatBubbles extends JavaPlugin {
 
                 display.setTransformation(new Transformation(
                     new Vector3f(
-                            (float) this.getConfig().getDouble("offsets.x", 0.0f),
-                            (float) this.getConfig().getDouble("offsets.y", 0.5f),
-                            (float) this.getConfig().getDouble("offsets.z", 0.0f)
+                            this.getFloat(event.chatChannel(), "offsets.x", 0.0f),
+                            this.getFloat(event.chatChannel(), "offsets.y", 0.5f),
+                            this.getFloat(event.chatChannel(), "offsets.z", 0.0f)
                     ), // offset
                     new AxisAngle4f(0, 0, 0, 0), // left rotation
-                    display.getTransformation().getScale().mul((float) this.getConfig().getDouble("scale", 1.0f)),
+                    display.getTransformation().getScale().mul(this.getFloat(event.chatChannel(), "scale", 1.0f)),
                     new AxisAngle4f(0, 0, 0, 0) // right rotation
                 ));
 
@@ -108,7 +105,7 @@ public final class CarbonChatBubbles extends JavaPlugin {
                 Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
                     display.remove();
                     this.displayCache.remove(player.getUniqueId(), display.getUniqueId());
-                }, 20 * this.getConfig().getLong("message-duration"));
+                }, 20 * this.getLong(event.chatChannel(), "message-duration", 5));
             });
 
         });
@@ -123,6 +120,22 @@ public final class CarbonChatBubbles extends JavaPlugin {
                 entity.remove();
             }
         });
+    }
+
+    private boolean getBoolean(final ChatChannel channel, final String path, final boolean def) {
+        return this.getConfig().getBoolean(channel.key().value() + "." + path, this.getConfig().getBoolean(path, def));
+    }
+
+    private String getString(final ChatChannel channel, final String path, final String def) {
+        return this.getConfig().getString(channel.key().value() + "."  + path, this.getConfig().getString(path, def));
+    }
+
+    private float getFloat(final ChatChannel channel, final String path, final float def) {
+        return (float) this.getConfig().getDouble(channel.key().value() + "."  + path, this.getConfig().getDouble(path, def));
+    }
+
+    private long getLong(final ChatChannel channel, final String path, final long def) {
+        return this.getConfig().getLong(channel.key().value() + "."  + path, this.getConfig().getLong(path, def));
     }
 
 }

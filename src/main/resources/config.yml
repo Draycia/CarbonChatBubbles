@@ -2,3 +2,11 @@ background-color: white
 text-color: black
 message-duration: 5
 word-wrap-length: 35
+shadowed: false
+see-through: false
+billboard-style: CENTER
+offsets:
+  x: 0.0
+  y: 0.5
+  z: 0.0
+scale: 1.0

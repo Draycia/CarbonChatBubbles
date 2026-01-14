@@ -1,7 +1,7 @@
 package net.draycia.carbonchatbubbles;
 
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.UUID;
 import net.draycia.carbon.api.CarbonChatProvider;
 import net.draycia.carbon.api.event.events.CarbonChatEvent;
@@ -24,7 +24,7 @@ import org.joml.Vector3f;
 
 public final class CarbonChatBubbles extends JavaPlugin {
 
-    private HashMap<UUID, UUID> displayCache = new HashMap<>();
+    private final HashMap<UUID, UUID> displayCache = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -60,27 +60,42 @@ public final class CarbonChatBubbles extends JavaPlugin {
 
                 display.setBackgroundColor(backgroundColor != null ? Color.fromRGB(backgroundColor.value()) : Color.WHITE);
 
-                display.setShadowed(false);
-                display.setSeeThrough(false);
-                display.setBillboard(Display.Billboard.CENTER);
+                display.setShadowed(this.getConfig().getBoolean("shadowed", false));
+                display.setSeeThrough(this.getConfig().getBoolean("see-through", false));
 
-                String textColorName = this.getConfig().getString("text-color").toLowerCase();
+                String billboard = this.getConfig().getString("billboard-style", "CENTER");
+                try {
+                    display.setBillboard(Display.Billboard.valueOf(billboard));
+                } catch (IllegalArgumentException ignored) {
+                    this.getLogger().warning("Invalid billboard type [" + billboard + ", allowed types " + Arrays.toString(Display.Billboard.values()));
+                    display.setBillboard(Display.Billboard.CENTER);
+                }
+
+                String textColorName = this.getConfig().getString("text-color", "BLACK").toLowerCase();
                 TextColor textColor = NamedTextColor.NAMES.value(textColorName) != null
                         ? NamedTextColor.NAMES.value(textColorName)
                         : TextColor.fromHexString(textColorName);
 
                 display.text(Component.text(wrappedContent, textColor != null ? textColor : NamedTextColor.BLACK));
 
-                display.getTransformation().getTranslation().add(0f, 0.5f, 0f);
+                display.getTransformation().getTranslation().add(
+                        (float) this.getConfig().getDouble("offsets.x", 0.0f),
+                        (float) this.getConfig().getDouble("offsets.y", 0.5f),
+                        (float) this.getConfig().getDouble("offsets.z", 0.0f)
+                );
                 display.setInterpolationDuration(0);
                 display.setInterpolationDelay(0);
 
                 player.addPassenger(display);
 
                 display.setTransformation(new Transformation(
-                    new Vector3f(0, 0.5f, 0), // offset
+                    new Vector3f(
+                            (float) this.getConfig().getDouble("offsets.x", 0.0f),
+                            (float) this.getConfig().getDouble("offsets.y", 0.5f),
+                            (float) this.getConfig().getDouble("offsets.z", 0.0f)
+                    ), // offset
                     new AxisAngle4f(0, 0, 0, 0), // left rotation
-                    display.getTransformation().getScale(),
+                    display.getTransformation().getScale().mul((float) this.getConfig().getDouble("scale", 1.0f)),
                     new AxisAngle4f(0, 0, 0, 0) // right rotation
                 ));
 

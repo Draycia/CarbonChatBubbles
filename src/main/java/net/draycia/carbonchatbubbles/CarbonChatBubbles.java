@@ -31,6 +31,10 @@ public final class CarbonChatBubbles extends JavaPlugin {
         saveDefaultConfig();
         
         CarbonChatProvider.carbonChat().eventHandler().subscribe(CarbonChatEvent.class, 1000, false, event -> {
+            if (event.sender().vanished()) {
+                return;
+            }
+
             String content = PlainTextComponentSerializer.plainText().serialize(event.message());
 
             // Not sure if necessary, I just fixed this but content was still being wrapped?
